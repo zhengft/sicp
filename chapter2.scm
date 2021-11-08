@@ -233,6 +233,9 @@
 		      (enumerate-interval 1 (- i 1))))
 	   (enumerate-interval 1 n)))
      
+(define (equal-sum-triples n s)
+  (filter (lambda (x) (= s (fold-right + 0 x)))
+          (unique-triples n)))
 
 (define (prime-sum-pairs n)
   (map make-pair-sum
@@ -253,35 +256,48 @@
   (cons (list n k) r))
 
 (define (safe? k positions)
-  (define (safe-judge judge n p)
-    (if (null? p)
-	#t
-	(let ((cp (car p)))
-	  (cond ((judge n cp) #f)
-		(else (safe-judge judge n (cdr p)))))))
   
-  (define (safe-left-cross? n p)
-    (safe-judge (lambda (n cp) (= (+ (car cp) (cadr cp)) n)) n p))
+  (define (safe-left-cross? current others)
+    (fold-right (lambda (a b) (and a b))
+                #t
+                (map (lambda (x)
+                       (not (= (+ (car current) (cadr current))
+                               (+ (car x) (cadr x)))))
+                     others)))
 
-  (define (safe-right-cross? n p)
-    (safe-judge (lambda (n cp) (= (- (car cp) (cadr cp)) n)) n p))
+  (define (safe-right-cross? current others)
+    (fold-right (lambda (a b) (and a b))
+                #t
+                (map (lambda (x)
+                       (not (= (- (car current) (cadr current))
+                               (- (car x) (cadr x)))))
+                     others)))
 
-  (define (safe-row? n p)
-    (safe-judge (lambda (n cp) (= (car cp) n)) n p)))
-	    
+  (define (safe-row? current others)
+    (fold-right (lambda (a b) (and a b))
+                #t
+                (map (lambda (x) (not (= (car current) (car x)))) others)))
+
+  (let ((current (car positions))
+        (others (cdr positions)))
+
+       (and (safe-row? current others)
+            (safe-right-cross? current others)
+            (safe-left-cross? current others)
+       )))
 
 (define (queens board-size)
   (define (queen-cols k)
     (if (= k 0)
-	()
-	(filter
-	 (lambda (positions) (safe? k positions))
-	 (flatmap
-	  (lambda (rest-of-queens)
-	    (map (lambda (new-row)
-		   (adjoin-position new-row k rest-of-queens))
-		 (enumerate-interval 1 board-size)))
-	  (queen-cols (- k 1))))))
+      (list ())
+	  (filter
+	    (lambda (positions) (safe? k positions))
+	    (flatmap
+	      (lambda (rest-of-queens)
+	        (map (lambda (new-row)
+	               (adjoin-position new-row k rest-of-queens))
+	             (enumerate-interval 1 board-size)))
+	      (queen-cols (- k 1))))))
   (queen-cols board-size))
 
 (define (memq item x)
