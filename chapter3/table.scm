@@ -1,7 +1,7 @@
 (define (assoc key records same-key?)
   (cond ((null? records) false)
         ((same-key? key (caar records)) (car records))
-        (else (assoc key (cdr records)))))
+        (else (assoc key (cdr records) same-key?))))
 
 (define (make-table same-key?)
   (let ((local-table (list '*table*)))
